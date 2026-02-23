@@ -5,20 +5,20 @@
 ```mermaid
 flowchart TD
     subgraph Browser
-        UI[React UI Components]
-        Store[useInvoiceStore Reducer]
-        Processor[usePdfProcessor Hook]
+        UI["React UI Components"]
+        Store["useInvoiceStore Reducer"]
+        Processor["usePdfProcessor Hook"]
     end
 
     subgraph Services
-        PdfSvc[pdfService<br/>pdfToImages() + computeFileHash()]
-        PromptSvc[promptBuilder<br/>buildExtractionPrompt()]
-        VisionSvc[visionApiService<br/>extractInvoiceData()]
-        ParserSvc[parseModelResponse]
+        PdfSvc["pdfService: pdfToImages() + computeFileHash()"]
+        PromptSvc["promptBuilder: buildExtractionPrompt()"]
+        VisionSvc["visionApiService: extractInvoiceData()"]
+        ParserSvc["parseModelResponse"]
     end
 
     subgraph External
-        VisionAPI[(Vision LLM /chat/completions)]
+        VisionAPI[("Vision LLM /chat/completions")]
     end
 
     UI -->|dispatch actions| Store
