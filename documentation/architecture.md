@@ -11,13 +11,9 @@ flowchart TD
     end
 
     subgraph Services
-        PdfSvc[pdfService
-        • pdfToImages()
-        • computeFileHash()]
-        PromptSvc[promptBuilder
-        • buildExtractionPrompt()]
-        VisionSvc[visionApiService
-        • extractInvoiceData()]
+        PdfSvc[pdfService\npdfToImages() + computeFileHash()]
+        PromptSvc[promptBuilder\nbuildExtractionPrompt()]
+        VisionSvc[visionApiService\nextractInvoiceData()]
         ParserSvc[parseModelResponse]
     end
 
@@ -30,11 +26,11 @@ flowchart TD
     Processor -->|arrayBuffer & hash| PdfSvc
     Processor -->|page images| PdfSvc
     Processor -->|field configs| PromptSvc
-    Processor -->|prompt+images| VisionSvc
+    Processor -->|prompt + images| VisionSvc
     VisionSvc -->|HTTP JSON| VisionAPI
     VisionAPI -->|LLM response| VisionSvc
     Processor -->|raw JSON| ParserSvc
-    ParserSvc -->|scalar/array data| Processor
+    ParserSvc -->|scalar + array data| Processor
     Processor -->|COMPLETE_PROCESSING| Store
     Store -->|state snapshots| UI
 ```
