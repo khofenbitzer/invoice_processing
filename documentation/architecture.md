@@ -11,9 +11,9 @@ flowchart TD
     end
 
     subgraph Services
-        PdfSvc[pdfService\npdfToImages() + computeFileHash()]
-        PromptSvc[promptBuilder\nbuildExtractionPrompt()]
-        VisionSvc[visionApiService\nextractInvoiceData()]
+        PdfSvc[pdfService<br/>pdfToImages() + computeFileHash()]
+        PromptSvc[promptBuilder<br/>buildExtractionPrompt()]
+        VisionSvc[visionApiService<br/>extractInvoiceData()]
         ParserSvc[parseModelResponse]
     end
 
