@@ -104,6 +104,42 @@
   width: 90px;
 }
 
+/* ---- Config Buttons Row ---- */
+.config-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* ---- API Config Editor ---- */
+.api-config-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.api-config-field {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.api-config-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #374151;
+  min-width: 70px;
+}
+
+/* ---- Table Header ---- */
+.table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+.table-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
 /* ---- PDF Uploader ---- */
 .pdf-uploader {
   border: 2px dashed #d1d5db;
@@ -245,7 +281,7 @@
   overflow-x: auto;
 }
 .invoice-table-container h3 {
-  margin: 0 0 0.75rem;
+  margin: 0;
   font-size: 1rem;
 }
 .invoice-table {

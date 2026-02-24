@@ -65,7 +65,7 @@ export const defaultFieldConfigs: FieldConfig[] = [
 ];
 
 export const defaultApiConfig: ApiConfig = {
-  baseUrl: '/api/v1',
+  baseUrl: 'http://10.0.0.144:1234/v1',
   model: 'qwen/qwen3-vl-8b',
   maxTokens: 4096,
   temperature: 0.1,

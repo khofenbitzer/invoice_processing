@@ -2,6 +2,7 @@ import { useInvoiceStore } from './hooks/useInvoiceStore';
 import { usePdfProcessor } from './hooks/usePdfProcessor';
 import { PdfUploader } from './components/PdfUploader';
 import { FieldConfigEditor } from './components/FieldConfigEditor';
+import { ApiConfigEditor } from './components/ApiConfigEditor';
 import { ProcessingStatus } from './components/ProcessingStatus';
 import { InvoiceTable } from './components/InvoiceTable';
 import { ExportControls } from './components/ExportControls';
@@ -24,10 +25,16 @@ function App() {
 
       <main className="app-main">
         <section className="config-section">
-          <FieldConfigEditor
-            fieldConfigs={state.fieldConfigs}
-            onSave={(configs) => dispatch({ type: 'SET_FIELD_CONFIGS', payload: configs })}
-          />
+          <div className="config-buttons">
+            <FieldConfigEditor
+              fieldConfigs={state.fieldConfigs}
+              onSave={(configs) => dispatch({ type: 'SET_FIELD_CONFIGS', payload: configs })}
+            />
+            <ApiConfigEditor
+              apiConfig={state.apiConfig}
+              onSave={(config) => dispatch({ type: 'SET_API_CONFIG', payload: config })}
+            />
+          </div>
         </section>
 
         <section className="upload-section">
@@ -41,6 +48,7 @@ function App() {
             invoices={state.invoices}
             fieldConfigs={state.fieldConfigs}
             onRemove={(id) => dispatch({ type: 'REMOVE_INVOICE', payload: id })}
+            onClearAll={() => dispatch({ type: 'CLEAR_ALL_INVOICES' })}
           />
         </section>
 

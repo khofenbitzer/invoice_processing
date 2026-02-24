@@ -17,9 +17,19 @@ export async function extractInvoiceData(
     });
   }
 
-  const response = await fetch(`${config.baseUrl}/chat/completions`, {
+  const targetUrl = `${config.baseUrl}/chat/completions`;
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'X-LLM-Target-URL': targetUrl,
+  };
+  if (config.apiKey) {
+    headers['X-LLM-API-Key'] = config.apiKey;
+  }
+
+  const response = await fetch('/llm-proxy', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({
       model: config.model,
       messages: [
@@ -32,7 +42,7 @@ export async function extractInvoiceData(
           content,
         },
       ],
-      max_tokens: config.maxTokens,
+      // max_tokens: config.maxTokens,
       temperature: config.temperature,
       stream: false,
     }),
