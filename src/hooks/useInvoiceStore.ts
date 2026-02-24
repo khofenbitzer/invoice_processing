@@ -21,7 +21,8 @@ export type Action =
       };
     }
   | { type: 'PROCESSING_ERROR'; payload: { id: string; errorMessage: string } }
-  | { type: 'REMOVE_INVOICE'; payload: string };
+  | { type: 'REMOVE_INVOICE'; payload: string }
+  | { type: 'CLEAR_ALL_INVOICES' };
 
 function loadState(): AppState {
   try {
@@ -123,6 +124,10 @@ function invoiceReducer(state: AppState, action: Action): AppState {
         ...state,
         invoices: state.invoices.filter((inv) => inv.id !== action.payload),
       };
+      break;
+
+    case 'CLEAR_ALL_INVOICES':
+      next = { ...state, invoices: [] };
       break;
 
     default:

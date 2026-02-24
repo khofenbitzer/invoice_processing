@@ -5,9 +5,10 @@ interface InvoiceTableProps {
   invoices: InvoiceRecord[];
   fieldConfigs: FieldConfig[];
   onRemove: (id: string) => void;
+  onClearAll: () => void;
 }
 
-export function InvoiceTable({ invoices, fieldConfigs, onRemove }: InvoiceTableProps) {
+export function InvoiceTable({ invoices, fieldConfigs, onRemove, onClearAll }: InvoiceTableProps) {
   const [expandedRows, setExpandedRows] = useState<Record<string, string | null>>({});
 
   const scalarFields = fieldConfigs.filter((f) => f.type === 'scalar') as ScalarFieldConfig[];
@@ -25,7 +26,12 @@ export function InvoiceTable({ invoices, fieldConfigs, onRemove }: InvoiceTableP
 
   return (
     <div className="invoice-table-container">
-      <h3>Extracted Invoices</h3>
+      <div className="table-header">
+        <h3>Extracted Invoices</h3>
+        <button className="btn btn-danger btn-sm" onClick={onClearAll}>
+          Clear All
+        </button>
+      </div>
       <table className="invoice-table">
         <thead>
           <tr>

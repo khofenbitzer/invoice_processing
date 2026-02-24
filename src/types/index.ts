@@ -44,6 +44,7 @@ export interface ApiConfig {
   model: string;
   maxTokens: number;
   temperature: number;
+  apiKey?: string;
 }
 
 export interface AppState {
