@@ -1,0 +1,1185 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kill Your OCR Pipeline — Local Vision LLMs for Invoice Extraction</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FAFAF8;
+    --text: #1a1a1a;
+    --text-secondary: #555;
+    --accent: #E8553A;
+    --accent-light: #FFF0EC;
+    --accent-dark: #C7412A;
+    --green: #1B8F6A;
+    --green-light: #E8F7F1;
+    --blue: #2563EB;
+    --blue-light: #EFF6FF;
+    --purple: #7C3AED;
+    --border: #E5E5E0;
+    --card-bg: #FFFFFF;
+    --code-bg: #F5F5F0;
+    --tag-bg: #F0EFEA;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.72;
+    font-size: 18px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* === HERO === */
+  .hero {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 80px 24px 40px;
+  }
+
+  .hero-tags {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+
+  .hero-tag {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 4px;
+    background: var(--tag-bg);
+    color: var(--text-secondary);
+  }
+
+  .hero-tag.accent {
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+
+  h1 {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(38px, 5.5vw, 58px);
+    line-height: 1.1;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 24px;
+  }
+
+  .hero-subtitle {
+    font-size: 20px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    max-width: 640px;
+  }
+
+  .hero-meta {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .hero-meta .dot { opacity: 0.3; }
+
+  /* === ARTICLE BODY === */
+  article {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px 100px;
+  }
+
+  article p {
+    margin-bottom: 24px;
+    color: #2a2a2a;
+  }
+
+  article p strong {
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  h2 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 32px;
+    font-weight: 400;
+    line-height: 1.25;
+    margin: 60px 0 20px;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+
+  h3 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 40px 0 14px;
+    color: var(--text);
+  }
+
+  /* === CALLOUT BOXES === */
+  .callout {
+    border-radius: 8px;
+    padding: 24px 28px;
+    margin: 32px 0;
+    font-size: 16px;
+    line-height: 1.65;
+  }
+
+  .callout.problem {
+    background: #FEF2F2;
+    border-left: 4px solid var(--accent);
+    color: #991B1B;
+  }
+
+  .callout.solution {
+    background: var(--green-light);
+    border-left: 4px solid var(--green);
+    color: #065F46;
+  }
+
+  .callout.insight {
+    background: var(--blue-light);
+    border-left: 4px solid var(--blue);
+    color: #1E40AF;
+  }
+
+  .callout-label {
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    opacity: 0.8;
+  }
+
+  /* === FLOW DIAGRAMS === */
+  .diagram-container {
+    margin: 40px -40px;
+    padding: 0;
+  }
+
+  @media (max-width: 800px) {
+    .diagram-container { margin: 40px -12px; }
+  }
+
+  .diagram-container svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .diagram-caption {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 12px;
+    font-style: italic;
+  }
+
+  /* === CODE BLOCKS === */
+  .code-block {
+    background: #1E1E2E;
+    border-radius: 10px;
+    padding: 24px 28px;
+    margin: 28px 0;
+    overflow-x: auto;
+    position: relative;
+  }
+
+  .code-block .lang-label {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    font-size: 11px;
+    color: #888;
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .code-block code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #CDD6F4;
+  }
+
+  .code-block .comment { color: #6C7086; }
+  .code-block .key { color: #89B4FA; }
+  .code-block .string { color: #A6E3A1; }
+  .code-block .punct { color: #9399B2; }
+
+  /* === COMPARISON TABLE === */
+  .comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 32px 0;
+  }
+
+  @media (max-width: 600px) {
+    .comparison { grid-template-columns: 1fr; }
+  }
+
+  .compare-card {
+    border-radius: 10px;
+    padding: 24px;
+    border: 1px solid var(--border);
+  }
+
+  .compare-card.old {
+    background: #FEF2F2;
+    border-color: #FECACA;
+  }
+
+  .compare-card.new {
+    background: var(--green-light);
+    border-color: #A7F3D0;
+  }
+
+  .compare-card h4 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 12px;
+    font-weight: 700;
+  }
+
+  .compare-card.old h4 { color: var(--accent); }
+  .compare-card.new h4 { color: var(--green); }
+
+  .compare-card ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .compare-card li {
+    padding: 5px 0;
+    font-size: 15px;
+    padding-left: 22px;
+    position: relative;
+    color: var(--text);
+  }
+
+  .compare-card.old li::before {
+    content: "✕";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  .compare-card.new li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: var(--green);
+    font-weight: 700;
+  }
+
+  /* === PULL QUOTE === */
+  .pull-quote {
+    font-family: 'Instrument Serif', serif;
+    font-size: 28px;
+    line-height: 1.4;
+    color: var(--text);
+    margin: 48px 0;
+    padding: 32px 0;
+    border-top: 2px solid var(--text);
+    border-bottom: 2px solid var(--text);
+    font-style: italic;
+    text-align: center;
+  }
+
+  /* === NUMBERED LIST === */
+  .step-list {
+    counter-reset: steps;
+    margin: 28px 0;
+  }
+
+  .step-item {
+    counter-increment: steps;
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    align-items: flex-start;
+  }
+
+  .step-num {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--text);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+    margin-top: 2px;
+  }
+
+  .step-content {
+    flex: 1;
+  }
+
+  .step-content strong {
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .step-content span {
+    color: var(--text-secondary);
+    font-size: 16px;
+  }
+
+  /* === USE CASE GRID === */
+  .use-cases {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 28px 0;
+  }
+
+  @media (max-width: 600px) {
+    .use-cases { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .use-case {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+
+  .use-case:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  }
+
+  .use-case .icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  /* === FOOTER === */
+  .article-footer {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    border-top: 1px solid var(--border);
+  }
+
+  .footer-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .footer-tag {
+    font-size: 13px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: var(--tag-bg);
+    color: var(--text-secondary);
+  }
+
+  /* === SEPARATOR === */
+  .sep {
+    text-align: center;
+    margin: 48px 0;
+    color: var(--border);
+    font-size: 24px;
+    letter-spacing: 16px;
+  }
+
+  /* === TRADEOFF TABLE === */
+  .tradeoff-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 28px 0;
+    font-size: 15px;
+  }
+
+  .tradeoff-table th {
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 2px solid var(--text);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+  }
+
+  .tradeoff-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .tradeoff-table tr:last-child td { border-bottom: none; }
+
+  /* === CTA BANNER === */
+  .cta-banner {
+    display: flex;
+    gap: 12px;
+    margin: 28px 0;
+    flex-wrap: wrap;
+  }
+
+  .cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 22px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform 0.12s, box-shadow 0.12s;
+  }
+
+  .cta-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+  }
+
+  .cta-btn.github {
+    background: #24292F;
+    color: white;
+  }
+
+  .cta-btn.docker {
+    background: #1D63ED;
+    color: white;
+  }
+
+  .cta-btn svg { flex-shrink: 0; }
+
+  .cta-btn-text { line-height: 1.3; }
+
+  .cta-btn .btn-sub {
+    font-size: 11px;
+    font-weight: 400;
+    opacity: 0.75;
+    display: block;
+  }
+
+  /* === INSTALL SECTION === */
+  .install-steps {
+    margin: 24px 0;
+  }
+
+  .install-step {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 24px;
+    align-items: flex-start;
+  }
+
+  .install-step-num {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    margin-top: 2px;
+  }
+
+  .install-step-content {
+    flex: 1;
+  }
+
+  .install-step-content > p {
+    margin-bottom: 8px;
+    font-size: 16px;
+  }
+
+  .code-inline {
+    background: #1E1E2E;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 8px 0 0;
+    overflow-x: auto;
+    display: block;
+  }
+
+  .code-inline code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: #CDD6F4;
+    white-space: pre;
+  }
+
+  .code-inline .cmd { color: #89B4FA; }
+  .code-inline .flag { color: #F9E2AF; }
+  .code-inline .val { color: #A6E3A1; }
+  .code-inline .comment { color: #6C7086; }
+
+  .prereq-note {
+    background: #FFFBEB;
+    border: 1px solid #FDE68A;
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 15px;
+    color: #92400E;
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
+
+  .prereq-note strong { color: #78350F; }
+
+  /* === APP SCREENSHOT === */
+  .app-screenshot {
+    margin: 40px -40px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.05);
+  }
+
+  @media (max-width: 800px) {
+    .app-screenshot { margin: 40px -12px; }
+  }
+
+  .app-screenshot-bar {
+    background: #F0EFEA;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .app-screenshot-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #D1D0CB;
+  }
+
+  .app-screenshot-url {
+    flex: 1;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #888;
+  }
+
+  .app-screenshot img {
+    width: 100%;
+    display: block;
+  }
+
+  .app-screenshot-caption {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 14px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-tags">
+    <span class="hero-tag accent">Local AI</span>
+    <span class="hero-tag">Document Intelligence</span>
+    <span class="hero-tag">Finance Automation</span>
+  </div>
+  <h1>Kill Your OCR Pipeline</h1>
+  <p class="hero-subtitle">How a local vision LLM turns messy invoice PDFs into clean spreadsheet data—without sending a single byte off your network.</p>
+  <div class="hero-meta">
+    <span>12 min read</span>
+    <span class="dot">·</span>
+    <span>Qwen3-VL-8B · LM Studio · Python</span>
+  </div>
+</header>
+
+<!-- ARTICLE -->
+<article>
+
+  <p>Invoices are "structured" the way a teenager's bedroom is "organized"—everything is technically there, but good luck finding it programmatically.</p>
+
+  <p>They arrive as PDFs with wildly inconsistent layouts. Nested tables sit next to logos. Tax rows hide below fold lines. Vendor A puts the total top-right; Vendor B buries it on page two. And somewhere in the middle, your AP team is copy-pasting line items into a spreadsheet, because the "automation" you built three years ago keeps breaking.</p>
+
+  <p><strong>There's a better way now.</strong> Vision-capable LLMs can look at an invoice image the way a human does—and extract structured data from it directly. No OCR chain. No template matching. No regex graveyard.</p>
+
+  <p>This article walks through a <strong>fully local</strong> system that does exactly this, powered by <strong>Qwen3-VL-8B</strong>, running on your own hardware. Every byte of financial data stays inside your network.</p>
+
+  <div class="cta-banner">
+    <a href="https://github.com/khofenbitzer/invoice_processing.git" class="cta-btn github" target="_blank" rel="noopener">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      <span class="cta-btn-text">Source Code<span class="btn-sub">GitHub repo</span></span>
+    </a>
+    <a href="https://hub.docker.com/r/klaushofenbitzer/invoice_processing" class="cta-btn docker" target="_blank" rel="noopener">
+      <svg width="22" height="18" viewBox="0 0 24 18" fill="white"><path d="M13.983 1.614h-2.194v2.15h2.194V1.614zm0 2.43H11.79v2.15h2.194V4.044zm-2.473 0H9.316v2.15h2.194V4.044zm-2.473 0H6.843v2.15h2.194V4.044zm-2.473 0H4.37v2.15h2.194V4.044zm2.473-2.43H9.316v2.15h2.194V1.614zm-2.473 0H6.843v2.15h2.194V1.614zm7.42 4.97c-.542-.377-1.785-.514-2.74-.327-.124-.89-.635-1.665-1.243-2.29l-.425-.389-.403.41c-.51.52-.793 1.242-.86 2.002-.032.322-.013.66.07.984-.503.261-1.06.41-1.573.46H.5c-.28 1.6.168 3.653 1.216 5.07C2.787 13.96 4.382 14.7 6.53 14.7c4.826 0 8.395-2.216 10.075-6.242.658.013 2.076 0 2.803-1.387l.04-.07-.378-.246z"/></svg>
+      <span class="cta-btn-text">Docker Image<span class="btn-sub">One-command install</span></span>
+    </a>
+  </div>
+
+  <div class="sep">· · ·</div>
+
+  <!-- SECTION: The Problem -->
+  <h2>The Problem With "Structured" Documents</h2>
+
+  <p>If you've ever tried to automate invoice processing, you've hit the same wall everyone else has. Invoices are structured for human eyes, not machines. The "structure" is entirely visual: columns implied by alignment, totals associated with labels by proximity, line items grouped by whitespace.</p>
+
+  <p>Here's what makes them brutal for automation:</p>
+
+  <div class="callout problem">
+    <div class="callout-label">Why invoices break traditional parsers</div>
+    Every vendor uses a different layout. Templates change without warning. Tables are visual, not semantic—there are no actual <code>&lt;table&gt;</code> tags in a PDF. Pages may be scanned, rotated, multi-page, or image-only. Stamps, logos, and handwritten notes add noise everywhere.
+  </div>
+
+  <p>Rule-based systems and template matchers work fine—until they don't. And they stop working exactly when it matters: when you onboard a new vendor, when someone updates their invoice template, or when a batch of scanned PDFs lands in your inbox.</p>
+
+  <!-- SECTION: OCR vs Vision -->
+  <h2>OCR Pipelines vs. Vision LLMs</h2>
+
+  <p>The standard approach for years has been an OCR-first pipeline. Convert the PDF to text, then throw it at a language model. It works—sort of. But it has a fundamental flaw: <strong>OCR destroys the one thing that makes invoices readable: layout.</strong></p>
+
+  <div class="diagram-container">
+    <svg viewBox="0 0 800 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="OCR pipeline vs Vision LLM pipeline comparison diagram">
+      <!-- OCR Pipeline (top) -->
+      <rect x="20" y="20" width="760" height="120" rx="12" fill="#FEF2F2" stroke="#FECACA" stroke-width="1.5"/>
+      <text x="40" y="48" font-family="DM Sans" font-size="11" font-weight="700" fill="#DC2626" letter-spacing="0.08em">THE OLD WAY — OCR PIPELINE</text>
+
+      <!-- Nodes -->
+      <rect x="40" y="65" width="110" height="52" rx="8" fill="white" stroke="#E5E5E0" stroke-width="1"/>
+      <text x="95" y="88" font-family="DM Sans" font-size="13" font-weight="600" fill="#1a1a1a" text-anchor="middle">📄 PDF</text>
+      <text x="95" y="104" font-family="DM Sans" font-size="10" fill="#888" text-anchor="middle">Invoice input</text>
+
+      <line x1="150" y1="91" x2="188" y2="91" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+
+      <rect x="188" y="65" width="110" height="52" rx="8" fill="white" stroke="#E5E5E0" stroke-width="1"/>
+      <text x="243" y="88" font-family="DM Sans" font-size="13" font-weight="600" fill="#1a1a1a" text-anchor="middle">🔍 OCR</text>
+      <text x="243" y="104" font-family="DM Sans" font-size="10" fill="#888" text-anchor="middle">Tesseract / etc.</text>
+
+      <line x1="298" y1="91" x2="336" y2="91" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+
+      <rect x="336" y="65" width="120" height="52" rx="8" fill="white" stroke="#E5E5E0" stroke-width="1"/>
+      <text x="396" y="88" font-family="DM Sans" font-size="13" font-weight="600" fill="#1a1a1a" text-anchor="middle">📝 Plain Text</text>
+      <text x="396" y="104" font-family="DM Sans" font-size="10" fill="#DC2626" text-anchor="middle">⚠ Layout lost</text>
+
+      <line x1="456" y1="91" x2="494" y2="91" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+
+      <rect x="494" y="65" width="110" height="52" rx="8" fill="white" stroke="#E5E5E0" stroke-width="1"/>
+      <text x="549" y="88" font-family="DM Sans" font-size="13" font-weight="600" fill="#1a1a1a" text-anchor="middle">🤖 Text LLM</text>
+      <text x="549" y="104" font-family="DM Sans" font-size="10" fill="#888" text-anchor="middle">Guesses structure</text>
+
+      <line x1="604" y1="91" x2="642" y2="91" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+
+      <rect x="642" y="65" width="120" height="52" rx="8" fill="white" stroke="#FECACA" stroke-width="1.5"/>
+      <text x="702" y="88" font-family="DM Sans" font-size="13" font-weight="600" fill="#DC2626" text-anchor="middle">❌ Fragile JSON</text>
+      <text x="702" y="104" font-family="DM Sans" font-size="10" fill="#DC2626" text-anchor="middle">Errors compound</text>
+
+      <!-- Vision Pipeline (bottom) -->
+      <rect x="20" y="175" width="760" height="120" rx="12" fill="#E8F7F1" stroke="#A7F3D0" stroke-width="1.5"/>
+      <text x="40" y="203" font-family="DM Sans" font-size="11" font-weight="700" fill="#059669" letter-spacing="0.08em">THE NEW WAY — VISION LLM</text>
+
+      <rect x="40" y="220" width="110" height="52" rx="8" fill="white" stroke="#E5E5E0" stroke-width="1"/>
+      <text x="95" y="243" font-family="DM Sans" font-size="13" font-weight="600" fill="#1a1a1a" text-anchor="middle">📄 PDF</text>
+      <text x="95" y="259" font-family="DM Sans" font-size="10" fill="#888" text-anchor="middle">Invoice input</text>
+
+      <line x1="150" y1="246" x2="218" y2="246" stroke="#059669" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+
+      <rect x="218" y="220" width="120" height="52" rx="8" fill="white" stroke="#E5E5E0" stroke-width="1"/>
+      <text x="278" y="243" font-family="DM Sans" font-size="13" font-weight="600" fill="#1a1a1a" text-anchor="middle">🖼️ PNG Image</text>
+      <text x="278" y="259" font-family="DM Sans" font-size="10" fill="#059669" text-anchor="middle">✓ Layout intact</text>
+
+      <line x1="338" y1="246" x2="406" y2="246" stroke="#059669" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+
+      <rect x="406" y="220" width="140" height="52" rx="8" fill="white" stroke="#E5E5E0" stroke-width="1"/>
+      <text x="476" y="243" font-family="DM Sans" font-size="13" font-weight="600" fill="#1a1a1a" text-anchor="middle">👁️ Vision LLM</text>
+      <text x="476" y="259" font-family="DM Sans" font-size="10" fill="#059669" text-anchor="middle">Sees the page</text>
+
+      <line x1="546" y1="246" x2="614" y2="246" stroke="#059669" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+
+      <rect x="614" y="220" width="148" height="52" rx="8" fill="white" stroke="#A7F3D0" stroke-width="1.5"/>
+      <text x="688" y="243" font-family="DM Sans" font-size="13" font-weight="600" fill="#059669" text-anchor="middle">✅ Clean JSON</text>
+      <text x="688" y="259" font-family="DM Sans" font-size="10" fill="#059669" text-anchor="middle">Structured output</text>
+
+      <!-- Arrows -->
+      <defs>
+        <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#DC2626"/></marker>
+        <marker id="arrow-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#059669"/></marker>
+      </defs>
+    </svg>
+    <p class="diagram-caption">The OCR pipeline loses spatial information at step 2. The vision pipeline preserves it end-to-end.</p>
+  </div>
+
+  <p>When OCR converts a PDF to plain text, it flattens the page. Row/column alignment disappears. A line item that was clearly in a table now looks like a random string next to a number. The LLM downstream has to <em>guess</em> what was a column header and what was a value—and it guesses wrong more often than you'd like.</p>
+
+  <p>A vision model skips this entirely. It takes a page image as input, <strong>sees</strong> the spatial relationships, and reasons over them directly. Table boundaries. Column alignment. The way a total sits beneath a column of numbers. The spatial logic that makes an invoice readable to you is exactly what the model uses too.</p>
+
+  <div class="comparison">
+    <div class="compare-card old">
+      <h4>OCR Pipeline</h4>
+      <ul>
+        <li>Layout destroyed during extraction</li>
+        <li>Table rows/columns misaligned</li>
+        <li>Small text &amp; stamps cause noise</li>
+        <li>Needs post-processing heuristics</li>
+        <li>Vendor-specific tuning required</li>
+      </ul>
+    </div>
+    <div class="compare-card new">
+      <h4>Vision LLM</h4>
+      <ul>
+        <li>Layout preserved as visual input</li>
+        <li>Table geometry directly understood</li>
+        <li>Handles noise naturally</li>
+        <li>Schema-driven clean output</li>
+        <li>Vendor-agnostic by design</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sep">· · ·</div>
+
+  <!-- SECTION: Why Local -->
+  <h2>Why This Has to Run Locally</h2>
+
+  <p>Here's the part most AI demos conveniently skip: <strong>invoices are sensitive documents.</strong></p>
+
+  <p>They contain vendor banking details, tax IDs, internal cost centers, payment terms, and sometimes PII. Sending them to an external API—even a reputable one—opens a can of compliance worms that most finance teams won't touch.</p>
+
+  <div class="callout insight">
+    <div class="callout-label">The compliance question</div>
+    Every external API call with financial data triggers the same questions: Where is the data stored? Is it logged? Is it used for training? What's the retention policy? How does this affect SOC 2, ISO 27001, GDPR, or vendor agreements?
+  </div>
+
+  <p>Running inference locally eliminates the entire category of risk. Your documents never leave your network. There's no third-party data processor. Retention is whatever you decide it is. And your compliance team doesn't need to review yet another vendor's DPA.</p>
+
+  <div class="diagram-container">
+    <svg viewBox="0 0 800 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Data flow comparison: cloud API vs local inference">
+      <!-- Cloud path -->
+      <text x="400" y="30" font-family="DM Sans" font-size="12" font-weight="700" fill="#DC2626" text-anchor="middle" letter-spacing="0.08em">CLOUD API — DATA LEAVES YOUR NETWORK</text>
+
+      <rect x="40" y="48" width="150" height="64" rx="10" fill="#FEF2F2" stroke="#FECACA" stroke-width="1.5"/>
+      <text x="115" y="73" font-family="DM Sans" font-size="12" font-weight="600" fill="#1a1a1a" text-anchor="middle">🏢 Your Network</text>
+      <text x="115" y="92" font-family="DM Sans" font-size="10" fill="#888" text-anchor="middle">Financial documents</text>
+
+      <line x1="190" y1="80" x2="290" y2="80" stroke="#DC2626" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow-red)"/>
+      <text x="240" y="72" font-family="DM Sans" font-size="9" fill="#DC2626" text-anchor="middle" font-weight="600">INTERNET</text>
+
+      <rect x="290" y="48" width="150" height="64" rx="10" fill="#FEF2F2" stroke="#FECACA" stroke-width="1.5"/>
+      <text x="365" y="73" font-family="DM Sans" font-size="12" font-weight="600" fill="#1a1a1a" text-anchor="middle">☁️ External API</text>
+      <text x="365" y="92" font-family="DM Sans" font-size="10" fill="#DC2626" text-anchor="middle">Stored? Logged? Trained?</text>
+
+      <line x1="440" y1="80" x2="540" y2="80" stroke="#DC2626" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow-red)"/>
+
+      <rect x="540" y="48" width="210" height="64" rx="10" fill="#FEF2F2" stroke="#FECACA" stroke-width="1.5"/>
+      <text x="645" y="73" font-family="DM Sans" font-size="12" font-weight="600" fill="#DC2626" text-anchor="middle">❓ Unknown infra</text>
+      <text x="645" y="92" font-family="DM Sans" font-size="10" fill="#DC2626" text-anchor="middle">SOC 2? GDPR? Retention?</text>
+
+      <!-- Local path -->
+      <text x="400" y="168" font-family="DM Sans" font-size="12" font-weight="700" fill="#059669" text-anchor="middle" letter-spacing="0.08em">LOCAL INFERENCE — DATA NEVER LEAVES</text>
+
+      <rect x="80" y="186" width="640" height="72" rx="12" fill="#E8F7F1" stroke="#A7F3D0" stroke-width="1.5" stroke-dasharray="0"/>
+
+      <rect x="104" y="200" width="140" height="44" rx="8" fill="white" stroke="#E5E5E0" stroke-width="1"/>
+      <text x="174" y="220" font-family="DM Sans" font-size="12" font-weight="600" fill="#1a1a1a" text-anchor="middle">📄 Documents</text>
+      <text x="174" y="235" font-family="DM Sans" font-size="10" fill="#888" text-anchor="middle">Your invoices</text>
+
+      <line x1="244" y1="222" x2="324" y2="222" stroke="#059669" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+
+      <rect x="324" y="200" width="150" height="44" rx="8" fill="white" stroke="#E5E5E0" stroke-width="1"/>
+      <text x="399" y="220" font-family="DM Sans" font-size="12" font-weight="600" fill="#1a1a1a" text-anchor="middle">🧠 Local Model</text>
+      <text x="399" y="235" font-family="DM Sans" font-size="10" fill="#059669" text-anchor="middle">Qwen3-VL-8B</text>
+
+      <line x1="474" y1="222" x2="544" y2="222" stroke="#059669" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+
+      <rect x="544" y="200" width="155" height="44" rx="8" fill="white" stroke="#E5E5E0" stroke-width="1"/>
+      <text x="621" y="220" font-family="DM Sans" font-size="12" font-weight="600" fill="#1a1a1a" text-anchor="middle">📊 Structured Data</text>
+      <text x="621" y="235" font-family="DM Sans" font-size="10" fill="#059669" text-anchor="middle">Your storage</text>
+
+      <text x="400" y="277" font-family="DM Sans" font-size="11" fill="#059669" text-anchor="middle" font-weight="600">🔒  ENTIRE PROCESS STAYS WITHIN YOUR SECURITY BOUNDARY</text>
+    </svg>
+    <p class="diagram-caption">Cloud APIs create a compliance surface. Local inference eliminates it entirely.</p>
+  </div>
+
+  <p>For many organizations, this is the difference between "interesting proof of concept" and "something we can actually deploy."</p>
+
+  <div class="sep">· · ·</div>
+
+  <!-- SECTION: The Model -->
+  <h2>The Model: Qwen3-VL-8B</h2>
+
+  <p><strong>Qwen3-VL-8B</strong> is an open multimodal model that can process image inputs and generate structured text outputs. At 8B parameters, it sits in the sweet spot for local deployment: powerful enough for reliable document extraction, small enough to run on a single GPU with quantization.</p>
+
+  <p>The setup is straightforward: host the model locally via <strong>LM Studio</strong>, which exposes an OpenAI-compatible API endpoint. Use 4-bit or 8-bit quantization depending on your hardware. Your application talks to it like any other API—except the endpoint is <code>localhost</code>.</p>
+
+  <p>What makes it work well for invoices specifically:</p>
+
+  <table class="tradeoff-table">
+    <thead>
+      <tr>
+        <th>Capability</th>
+        <th>Why it matters for invoices</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Document layout understanding</strong></td>
+        <td>Correctly identifies table boundaries, column headers, and spatial groupings—even in messy scanned documents</td>
+      </tr>
+      <tr>
+        <td><strong>JSON schema adherence</strong></td>
+        <td>When prompted with a target schema, reliably produces valid, parseable JSON instead of prose descriptions</td>
+      </tr>
+      <tr>
+        <td><strong>Quantization tolerance</strong></td>
+        <td>4-bit quantized versions maintain strong extraction quality, enabling deployment on consumer GPUs (16GB VRAM)</td>
+      </tr>
+      <tr>
+        <td><strong>Inference speed</strong></td>
+        <td>Processes a typical single-page invoice in seconds, making batch workflows practical</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="sep">· · ·</div>
+
+  <!-- SECTION: How It Works -->
+  <h2>How It Works: End to End</h2>
+
+  <p>The full pipeline is intentionally simple. Simplicity is a feature—fewer moving parts means fewer failure modes.</p>
+
+  <div class="diagram-container">
+    <svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Full application pipeline from upload to export">
+      <defs>
+        <marker id="arrow-dark" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#1a1a1a"/></marker>
+        <filter id="shadow" x="-4%" y="-4%" width="108%" height="112%">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.08"/>
+        </filter>
+      </defs>
+
+      <text x="400" y="30" font-family="Instrument Serif" font-size="20" fill="#1a1a1a" text-anchor="middle">The Pipeline</text>
+
+      <!-- Step 1 -->
+      <rect x="20" y="55" width="160" height="90" rx="12" fill="white" stroke="#E5E5E0" stroke-width="1.5" filter="url(#shadow)"/>
+      <text x="100" y="82" font-family="DM Sans" font-size="26" text-anchor="middle">📤</text>
+      <text x="100" y="105" font-family="DM Sans" font-size="13" font-weight="600" fill="#1a1a1a" text-anchor="middle">Upload PDFs</text>
+      <text x="100" y="122" font-family="DM Sans" font-size="10" fill="#888" text-anchor="middle">Drag &amp; drop, single or batch</text>
+      <rect x="34" y="56" width="28" height="20" rx="4" fill="#1a1a1a"/>
+      <text x="48" y="70" font-family="DM Sans" font-size="10" font-weight="700" fill="white" text-anchor="middle">1</text>
+
+      <line x1="180" y1="100" x2="220" y2="100" stroke="#1a1a1a" stroke-width="1.5" marker-end="url(#arrow-dark)"/>
+
+      <!-- Step 2 -->
+      <rect x="220" y="55" width="160" height="90" rx="12" fill="white" stroke="#E5E5E0" stroke-width="1.5" filter="url(#shadow)"/>
+      <text x="300" y="82" font-family="DM Sans" font-size="26" text-anchor="middle">🖼️</text>
+      <text x="300" y="105" font-family="DM Sans" font-size="13" font-weight="600" fill="#1a1a1a" text-anchor="middle">Convert to PNG</text>
+      <text x="300" y="122" font-family="DM Sans" font-size="10" fill="#888" text-anchor="middle">Each page → image</text>
+      <rect x="234" y="56" width="28" height="20" rx="4" fill="#1a1a1a"/>
+      <text x="248" y="70" font-family="DM Sans" font-size="10" font-weight="700" fill="white" text-anchor="middle">2</text>
+
+      <line x1="380" y1="100" x2="420" y2="100" stroke="#1a1a1a" stroke-width="1.5" marker-end="url(#arrow-dark)"/>
+
+      <!-- Step 3 -->
+      <rect x="420" y="55" width="160" height="90" rx="12" fill="white" stroke="#E5E5E0" stroke-width="1.5" filter="url(#shadow)"/>
+      <text x="500" y="82" font-family="DM Sans" font-size="26" text-anchor="middle">👁️</text>
+      <text x="500" y="105" font-family="DM Sans" font-size="13" font-weight="600" fill="#1a1a1a" text-anchor="middle">Vision LLM</text>
+      <text x="500" y="122" font-family="DM Sans" font-size="10" fill="#888" text-anchor="middle">Qwen3-VL-8B (local)</text>
+      <rect x="434" y="56" width="28" height="20" rx="4" fill="#E8553A"/>
+      <text x="448" y="70" font-family="DM Sans" font-size="10" font-weight="700" fill="white" text-anchor="middle">3</text>
+
+      <line x1="580" y1="100" x2="620" y2="100" stroke="#1a1a1a" stroke-width="1.5" marker-end="url(#arrow-dark)"/>
+
+      <!-- Step 4 -->
+      <rect x="620" y="55" width="160" height="90" rx="12" fill="white" stroke="#E5E5E0" stroke-width="1.5" filter="url(#shadow)"/>
+      <text x="700" y="82" font-family="DM Sans" font-size="26" text-anchor="middle">{ }</text>
+      <text x="700" y="105" font-family="DM Sans" font-size="13" font-weight="600" fill="#1a1a1a" text-anchor="middle">Structured JSON</text>
+      <text x="700" y="122" font-family="DM Sans" font-size="10" fill="#888" text-anchor="middle">Scalars + arrays</text>
+      <rect x="634" y="56" width="28" height="20" rx="4" fill="#1a1a1a"/>
+      <text x="648" y="70" font-family="DM Sans" font-size="10" font-weight="700" fill="white" text-anchor="middle">4</text>
+
+      <!-- Second row -->
+      <path d="M700,145 L700,180 L100,180 L100,215" stroke="#1a1a1a" stroke-width="1.5" fill="none" marker-end="url(#arrow-dark)" stroke-dasharray="6 4"/>
+
+      <!-- Step 5 -->
+      <rect x="20" y="215" width="360" height="90" rx="12" fill="white" stroke="#E5E5E0" stroke-width="1.5" filter="url(#shadow)"/>
+      <text x="200" y="242" font-family="DM Sans" font-size="26" text-anchor="middle">🔍</text>
+      <text x="200" y="267" font-family="DM Sans" font-size="13" font-weight="600" fill="#1a1a1a" text-anchor="middle">Review &amp; Validate</text>
+      <text x="200" y="285" font-family="DM Sans" font-size="10" fill="#888" text-anchor="middle">Interactive table • expandable line items • visual checks</text>
+      <rect x="34" y="216" width="28" height="20" rx="4" fill="#1a1a1a"/>
+      <text x="48" y="230" font-family="DM Sans" font-size="10" font-weight="700" fill="white" text-anchor="middle">5</text>
+
+      <line x1="380" y1="260" x2="420" y2="260" stroke="#1a1a1a" stroke-width="1.5" marker-end="url(#arrow-dark)"/>
+
+      <!-- Step 6 -->
+      <rect x="420" y="215" width="360" height="90" rx="12" fill="#E8F7F1" stroke="#A7F3D0" stroke-width="1.5" filter="url(#shadow)"/>
+      <text x="600" y="242" font-family="DM Sans" font-size="26" text-anchor="middle">📊</text>
+      <text x="600" y="267" font-family="DM Sans" font-size="13" font-weight="600" fill="#059669" text-anchor="middle">Export to Excel / CSV</text>
+      <text x="600" y="285" font-family="DM Sans" font-size="10" fill="#059669" text-anchor="middle">Overview sheet + Line Items sheet • linked by invoice ID</text>
+      <rect x="434" y="216" width="28" height="20" rx="4" fill="#059669"/>
+      <text x="448" y="230" font-family="DM Sans" font-size="10" font-weight="700" fill="white" text-anchor="middle">6</text>
+
+      <!-- Bottom note -->
+      <text x="400" y="345" font-family="DM Sans" font-size="12" fill="#888" text-anchor="middle">By normalizing all input to images, the system avoids edge cases tied to PDF internals.</text>
+      <text x="400" y="362" font-family="DM Sans" font-size="12" fill="#888" text-anchor="middle">The pipeline works identically for scanned, digital, rotated, or multi-page PDFs.</text>
+    </svg>
+    <p class="diagram-caption">Six steps from messy PDFs to clean spreadsheets. The model does the hard work at step 3.</p>
+  </div>
+
+  <p>A key design choice: <strong>converting PDFs to PNG images before inference.</strong> This normalizes the input. It doesn't matter if the PDF is natively digital, scanned, rotated, or generated by 15 different accounting packages. The model always gets the same kind of input: a page image.</p>
+
+  <p>Here's what the actual application looks like:</p>
+
+  <div class="app-screenshot">
+    <div class="app-screenshot-bar">
+      <div class="app-screenshot-dot"></div>
+      <div class="app-screenshot-dot"></div>
+      <div class="app-screenshot-dot"></div>
+      <span class="app-screenshot-url">localhost:8501</span>
+    </div>
+    <img src="https://github.com/khofenbitzer/invoice_processing/blob/main/src/assets/overview.png?raw=true" alt="Invoice Processing Application — upload, extract, review, and export invoice data" loading="lazy"/>
+  </div>
+  <p class="app-screenshot-caption">The invoice extraction app: upload PDFs on the left, review structured results on the right, export to Excel.</p>
+
+  <div class="sep">· · ·</div>
+
+  <!-- SECTION: Schema -->
+  <h2>Schema-Driven Extraction</h2>
+
+  <p>The extraction isn't freeform. The model is prompted with an explicit target schema, and it returns data shaped to match. This eliminates the ambiguity that plagues open-ended prompts and makes downstream processing predictable.</p>
+
+  <p>The schema has two types of fields:</p>
+
+  <div class="comparison">
+    <div class="compare-card" style="background: #F8F8F5; border-color: var(--border);">
+      <h4 style="color: var(--text);">Scalar Fields</h4>
+      <ul style="list-style: none;">
+        <li style="padding-left: 0;"><code>vendor_name</code></li>
+        <li style="padding-left: 0;"><code>invoice_number</code></li>
+        <li style="padding-left: 0;"><code>invoice_date</code></li>
+        <li style="padding-left: 0;"><code>total_amount</code></li>
+        <li style="padding-left: 0;"><code>currency</code></li>
+      </ul>
+    </div>
+    <div class="compare-card" style="background: #F8F8F5; border-color: var(--border);">
+      <h4 style="color: var(--text);">Array Fields</h4>
+      <ul style="list-style: none;">
+        <li style="padding-left: 0;"><code>line_items[].description</code></li>
+        <li style="padding-left: 0;"><code>line_items[].quantity</code></li>
+        <li style="padding-left: 0;"><code>line_items[].unit_price</code></li>
+        <li style="padding-left: 0;"><code>line_items[].amount</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <span class="lang-label">prompt snippet</span>
+    <code><span class="comment">// The model receives this schema as part of the prompt</span>
+<span class="comment">// and returns data that matches it exactly</span>
+
+<span class="punct">{</span>
+  <span class="key">"vendor_name"</span><span class="punct">:</span> <span class="string">"string"</span><span class="punct">,</span>
+  <span class="key">"invoice_number"</span><span class="punct">:</span> <span class="string">"string"</span><span class="punct">,</span>
+  <span class="key">"invoice_date"</span><span class="punct">:</span> <span class="string">"string (YYYY-MM-DD)"</span><span class="punct">,</span>
+  <span class="key">"total_amount"</span><span class="punct">:</span> <span class="string">"number"</span><span class="punct">,</span>
+  <span class="key">"currency"</span><span class="punct">:</span> <span class="string">"string (ISO 4217)"</span><span class="punct">,</span>
+  <span class="key">"line_items"</span><span class="punct">: [</span>
+    <span class="punct">{</span>
+      <span class="key">"description"</span><span class="punct">:</span> <span class="string">"string"</span><span class="punct">,</span>
+      <span class="key">"quantity"</span><span class="punct">:</span> <span class="string">"number"</span><span class="punct">,</span>
+      <span class="key">"unit_price"</span><span class="punct">:</span> <span class="string">"number"</span><span class="punct">,</span>
+      <span class="key">"amount"</span><span class="punct">:</span> <span class="string">"number"</span>
+    <span class="punct">}</span>
+  <span class="punct">]</span>
+<span class="punct">}</span></code>
+  </div>
+
+  <p>This schema-driven approach means you can extend the system to new document types by changing the schema—not the code. Purchase orders, shipping documents, contracts: same pipeline, different schema.</p>
+
+  <div class="sep">· · ·</div>
+
+  <!-- SECTION: Beyond Invoices -->
+  <h2>Beyond Invoices: A Local Document Intelligence Layer</h2>
+
+  <p>Here's the bigger picture. This system isn't really an "invoice tool." It's a pattern: <strong>local multimodal model + schema prompt + structured output = general document intelligence.</strong></p>
+
+  <div class="pull-quote">One model, many document workflows. The same architecture that extracts invoices today handles purchase orders, contracts, and compliance forms tomorrow.</div>
+
+  <p>Instead of building and maintaining vendor-specific parsers, regex pipelines, and template-matching logic, you deploy one multimodal model as shared infrastructure. The same model supports:</p>
+
+  <div class="use-cases">
+    <div class="use-case"><span class="icon">🧾</span>Invoices</div>
+    <div class="use-case"><span class="icon">📋</span>Purchase Orders</div>
+    <div class="use-case"><span class="icon">📑</span>Contracts</div>
+    <div class="use-case"><span class="icon">🚚</span>Shipping Docs</div>
+    <div class="use-case"><span class="icon">✅</span>Compliance Forms</div>
+    <div class="use-case"><span class="icon">📈</span>Internal Reports</div>
+  </div>
+
+  <div class="sep">· · ·</div>
+
+  <!-- SECTION: Tradeoffs -->
+  <h2>Operational Tradeoffs (Honest Assessment)</h2>
+
+  <p>Local inference isn't free. You're trading cloud convenience for control. Here's what that looks like in practice:</p>
+
+  <table class="tradeoff-table">
+    <thead>
+      <tr>
+        <th>Dimension</th>
+        <th>Local Inference</th>
+        <th>Cloud API</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Data privacy</strong></td>
+        <td>Full control, nothing leaves your network</td>
+        <td>Depends on vendor policies</td>
+      </tr>
+      <tr>
+        <td><strong>Hardware</strong></td>
+        <td>GPU recommended (16GB+ VRAM)</td>
+        <td>None required</td>
+      </tr>
+      <tr>
+        <td><strong>Maintenance</strong></td>
+        <td>You own model updates, monitoring, tuning</td>
+        <td>Vendor-managed</td>
+      </tr>
+      <tr>
+        <td><strong>Cost model</strong></td>
+        <td>Fixed (hardware), predictable</td>
+        <td>Variable (per-token), can spike</td>
+      </tr>
+      <tr>
+        <td><strong>Compliance</strong></td>
+        <td>Simplified—no third-party DPA needed</td>
+        <td>Requires vendor security review</td>
+      </tr>
+      <tr>
+        <td><strong>Scaling</strong></td>
+        <td>Limited by hardware, add GPUs to scale</td>
+        <td>Effectively unlimited</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>For teams processing hundreds or low thousands of invoices per month with sensitive financial data, local inference is often the better fit. If you're processing millions of documents and data sensitivity isn't a concern, cloud APIs may make more sense.</p>
+
+  <div class="sep">· · ·</div>
+
+  <!-- SECTION: Try It -->
+  <h2>Try It Yourself</h2>
+
+  <p>The fastest way to get running is the Docker image. It packages the entire web app—you just need a local LLM endpoint (like LM Studio) running alongside it.</p>
+
+  <div class="prereq-note">
+    <strong>Prerequisites:</strong> Docker installed on your machine, and a local vision LLM running (e.g. Qwen3-VL-8B via <a href="https://lmstudio.ai" target="_blank" rel="noopener" style="color: #92400E; text-decoration: underline;">LM Studio</a>). Make sure your LM Studio server is started and accessible.
+  </div>
+
+  <div class="install-steps">
+    <div class="install-step">
+      <div class="install-step-num">1</div>
+      <div class="install-step-content">
+        <p><strong>Pull the image</strong></p>
+        <div class="code-inline"><code><span class="cmd">docker</span> pull klaushofenbitzer/invoice_processing</code></div>
+      </div>
+    </div>
+
+    <div class="install-step">
+      <div class="install-step-num">2</div>
+      <div class="install-step-content">
+        <p><strong>Run the container</strong></p>
+        <div class="code-inline"><code><span class="cmd">docker</span> run <span class="flag">-p</span> <span class="val">8501:8501</span> \
+  <span class="flag">--add-host</span>=<span class="val">host.docker.internal:host-gateway</span> \
+  klaushofenbitzer/invoice_processing</code></div>
+        <p style="font-size:14px; color:#888; margin-top:10px;">The <code style="font-size:13px;">--add-host</code> flag lets the container reach LM Studio on your host machine.</p>
+      </div>
+    </div>
+
+    <div class="install-step">
+      <div class="install-step-num">3</div>
+      <div class="install-step-content">
+        <p><strong>Open the app</strong></p>
+        <p>Navigate to <code style="background:#F0EFEA; padding:2px 8px; border-radius:4px; font-family:'JetBrains Mono',monospace; font-size:15px;">http://localhost:8501</code> — drag in an invoice and go.</p>
+      </div>
+    </div>
+  </div>
+
+  <p>That's it. Three commands, and you have a working invoice extraction system running entirely on your local machine.</p>
+
+  <p>Want to customize, extend the schema, or dig into the code? The full source is on GitHub:</p>
+
+  <div class="cta-banner">
+    <a href="https://github.com/khofenbitzer/invoice_processing.git" class="cta-btn github" target="_blank" rel="noopener">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      <span class="cta-btn-text">Browse the Source<span class="btn-sub">github.com/khofenbitzer/invoice_processing</span></span>
+    </a>
+    <a href="https://hub.docker.com/r/klaushofenbitzer/invoice_processing" class="cta-btn docker" target="_blank" rel="noopener">
+      <svg width="22" height="18" viewBox="0 0 24 18" fill="white"><path d="M13.983 1.614h-2.194v2.15h2.194V1.614zm0 2.43H11.79v2.15h2.194V4.044zm-2.473 0H9.316v2.15h2.194V4.044zm-2.473 0H6.843v2.15h2.194V4.044zm-2.473 0H4.37v2.15h2.194V4.044zm2.473-2.43H9.316v2.15h2.194V1.614zm-2.473 0H6.843v2.15h2.194V1.614zm7.42 4.97c-.542-.377-1.785-.514-2.74-.327-.124-.89-.635-1.665-1.243-2.29l-.425-.389-.403.41c-.51.52-.793 1.242-.86 2.002-.032.322-.013.66.07.984-.503.261-1.06.41-1.573.46H.5c-.28 1.6.168 3.653 1.216 5.07C2.787 13.96 4.382 14.7 6.53 14.7c4.826 0 8.395-2.216 10.075-6.242.658.013 2.076 0 2.803-1.387l.04-.07-.378-.246z"/></svg>
+      <span class="cta-btn-text">Docker Hub<span class="btn-sub">hub.docker.com/r/klaushofenbitzer/invoice_processing</span></span>
+    </a>
+  </div>
+
+  <div class="sep">· · ·</div>
+
+  <!-- SECTION: Closing -->
+  <h2>The Shift That Matters</h2>
+
+  <p>We're moving into a world where organizations deploy <strong>internal AI infrastructure</strong> rather than just consuming external APIs. Document processing is one of the highest-ROI entry points because the documents are messy, the data is sensitive, the automation value is immediate, and the accuracy requirements are clear and measurable.</p>
+
+  <p>Local multimodal models make this possible: <strong>AI capabilities inside the security boundary, not outside it.</strong></p>
+
+  <p>Invoice extraction happens to be the most obvious place to start. But the architecture—local vision model, schema-driven prompts, structured output, human review—applies far more broadly. If you have documents that humans currently read and transcribe, this pattern can probably help.</p>
+
+  <div class="callout solution">
+    <div class="callout-label">TL;DR</div>
+    Convert PDFs to images. Send them to a local vision LLM (Qwen3-VL-8B via LM Studio). Prompt with a target schema. Get structured JSON back. Review. Export to Excel. No data leaves your network. No vendor lock-in. No OCR pipeline to babysit.
+  </div>
+
+  <div class="article-footer">
+    <div class="footer-tags">
+      <span class="footer-tag">Local AI</span>
+      <span class="footer-tag">Vision LLM</span>
+      <span class="footer-tag">Document Intelligence</span>
+      <span class="footer-tag">Qwen3-VL</span>
+      <span class="footer-tag">Invoice Automation</span>
+      <span class="footer-tag">LM Studio</span>
+      <span class="footer-tag">Privacy-First AI</span>
+    </div>
+  </div>
+
+</article>
+
+</body>
+</html>

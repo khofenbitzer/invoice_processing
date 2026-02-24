@@ -20,7 +20,7 @@ The challenge is that invoices vary wildly. Templates change. Vendors embed tabl
 
 A **vision LLM** can “see” the invoice page like a human would and produce structured JSON consistently—without maintaining vendor-specific parsers.
 
-![Extracted invoices table with expandable line items](../src/assets/extracted_invoice_information.png)
+![Extracted invoices table with expandable line items](https://github.com/khofenbitzer/invoice_processing/blob/main/src/assets/extracted_invoice_information.png?raw=true)
 
 ---
 
@@ -71,7 +71,7 @@ Different workflows require different data. The app treats extraction as a schem
 
 This makes the extractor adaptable: you can add, remove, or rename fields without rewriting code.
 
-![Configurable scalar and array (line item) field extraction](../src/assets/filed_config.png)
+![Configurable scalar and array (line item) field extraction](https://github.com/khofenbitzer/invoice_processing/blob/main/src/assets/filed_config.png?raw=true)
 
 ---
 
@@ -89,7 +89,7 @@ You configure:
 - Model name
 - Optional API key (if your provider requires it)
 
-![LLM connection settings (base URL, model, API key)](../src/assets/LLM%20Config.png)
+![LLM connection settings (base URL, model, API key)](https://github.com/khofenbitzer/invoice_processing/blob/main/src/assets/LLM%20Config.png?raw=true)
 
 ---
 
@@ -103,7 +103,7 @@ User experience matters for operational tools. The workflow is intentionally fri
 
 You can immediately scan status and extracted fields, and expand each invoice to inspect line items.
 
-![Batch processing and table review experience](../src/assets/extracted_invoice_information.png)
+![Batch processing and table review experience](https://github.com/khofenbitzer/invoice_processing/blob/main/src/assets/extracted_invoice_information.png?raw=true)
 
 ---
 
@@ -119,11 +119,11 @@ This app exports:
 - **CSV**
   - A flat representation suitable for quick loading into other tools
 
-![Export controls (Excel/CSV)](../src/assets/excel_export.png)
+![Export controls (Excel/CSV)](https://github.com/khofenbitzer/invoice_processing/blob/main/src/assets/excel_export.png?raw=true)
 
 And here’s what the resulting spreadsheet data looks like in practice:
 
-![Extracted invoice data in a spreadsheet](../src/assets/excel_data_extract.png)
+![Extracted invoice data in a spreadsheet](https://github.com/khofenbitzer/invoice_processing/blob/main/src/assets/excel_data_extract.png?raw=true)
 
 ---
 
